@@ -16,14 +16,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Link, useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import { apiService } from "@/services/api";
 import type { LoginRequest } from "@/types/api";
+import { validateLoginForm } from "@/utils/validation";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,15 +40,28 @@ export default function LoginPage() {
       return;
     }
 
+    // Usar validação centralizada
+    const validationError = validateLoginForm(email, password);
+    if (validationError) {
+      setError(validationError);
+      setIsLoading(false);
+      return;
+    }
+
+    // Teste de conectividade e login
     try {
       const loginData: LoginRequest = { email, password };
-      const response = await apiService.login(loginData);
       
-      console.log('Login response:', response); // Debug
+      const response = await apiService.login(loginData);
       
       // O backend agora retorna { token: "..." }
       if (!response || !response.token) {
-        throw new Error('Token não recebido do servidor');
+        throw new Error('Falha na autenticação');
+      }
+      
+      // Verificar se o token não está vazio
+      if (response.token.trim() === '') {
+        throw new Error('Token inválido recebido');
       }
       
       // Salvar o token primeiro
@@ -59,7 +75,6 @@ export default function LoginPage() {
         localStorage.setItem("userEmail", userData.email);
         localStorage.setItem("userType", userData.userType);
       } catch (userError) {
-        console.warn('Não foi possível buscar dados do usuário, usando dados temporários:', userError);
         // Fallback para dados temporários
         localStorage.setItem("userEmail", email);
         localStorage.setItem("userName", email.split("@")[0]);
@@ -70,8 +85,25 @@ export default function LoginPage() {
       localStorage.setItem("isLoggedIn", "true");
       navigate("/dashboard");
     } catch (error) {
-      console.error("Login error:", error);
-      setError(error instanceof Error ? error.message : "Erro ao fazer login. Verifique suas credenciais.");
+      // Limpar qualquer dado de autenticação em caso de erro
+      apiService.clearAuthData();
+      
+      // Melhor tratamento de erros
+      let errorMessage = "Erro ao fazer login. Tente novamente.";
+      
+      if (error instanceof Error) {
+        if (error.message.includes('fetch')) {
+          errorMessage = "Não foi possível conectar ao servidor.";
+        } else if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+          errorMessage = "Email ou senha incorretos.";
+        } else if (error.message.includes('400') || error.message.includes('Bad Request')) {
+          errorMessage = "Dados de login inválidos.";
+        } else if (error.message.includes('500')) {
+          errorMessage = "Erro interno do servidor. Tente novamente.";
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -106,25 +138,30 @@ export default function LoginPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Sua senha"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            <div className="text-right">
-              <Link
-                to="/forgot-password"
-                className="text-sm text-blue-600 hover:underline"
-              >
-                Esqueceu a senha?
-              </Link>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Sua senha"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                  )}
+                </button>
+              </div>
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
+          <CardFooter className="flex flex-col space-y-4 pt-6">
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Entrando..." : "Entrar"}
             </Button>

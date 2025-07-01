@@ -15,14 +15,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Link, useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import { apiService } from "@/services/api";
 import type { CreateUserRequest } from "@/types/api";
 
@@ -32,10 +26,12 @@ export default function RegisterPage() {
     email: "",
     password: "",
     confirmPassword: "",
-    userType: "" as 'participant' | 'organizer' | "",
+    // userType removido - será sempre 'participant'
   });
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleInputChange = (field: string, value: string) => {
@@ -51,8 +47,7 @@ export default function RegisterPage() {
     if (
       !formData.name ||
       !formData.email ||
-      !formData.password ||
-      !formData.userType
+      !formData.password
     ) {
       setError("Por favor, preencha todos os campos");
       setIsLoading(false);
@@ -77,7 +72,7 @@ export default function RegisterPage() {
         name: formData.name,
         email: formData.email,
         password: formData.password,
-        userType: formData.userType as 'participant' | 'organizer',
+        // userType será definido automaticamente como 'participant' no backend
       };
 
       // Criar usuário via API
@@ -125,7 +120,7 @@ export default function RegisterPage() {
         // Fallback para dados do formulário
         localStorage.setItem("userEmail", formData.email);
         localStorage.setItem("userName", formData.name);
-        localStorage.setItem("userType", formData.userType);
+        localStorage.setItem("userType", "participant"); // Sempre participant por padrão
         localStorage.setItem("userId", "temp-id");
       }
       
@@ -205,46 +200,57 @@ export default function RegisterPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="userType">Tipo de usuário</Label>
-              <Select
-                value={formData.userType}
-                onValueChange={(value) => handleInputChange("userType", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o tipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="participant">Participante</SelectItem>
-                  <SelectItem value="organizer">Organizador</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Mínimo 6 caracteres"
-                value={formData.password}
-                onChange={(e) => handleInputChange("password", e.target.value)}
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Mínimo 6 caracteres"
+                  value={formData.password}
+                  onChange={(e) => handleInputChange("password", e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                  )}
+                </button>
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirmar senha</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="Confirme sua senha"
-                value={formData.confirmPassword}
-                onChange={(e) =>
-                  handleInputChange("confirmPassword", e.target.value)
-                }
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="Confirme sua senha"
+                  value={formData.confirmPassword}
+                  onChange={(e) =>
+                    handleInputChange("confirmPassword", e.target.value)
+                  }
+                  required
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                  )}
+                </button>
+              </div>
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
+          <CardFooter className="flex flex-col space-y-4 pt-6">
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Criando conta..." : "Criar conta"}
             </Button>

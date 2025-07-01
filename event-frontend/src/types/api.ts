@@ -2,7 +2,7 @@ export interface CreateUserRequest {
   name: string;
   email: string;
   password: string;
-  userType: 'participant' | 'organizer';
+  // userType removido - será definido automaticamente como 'participant'
 }
 
 export interface CreateUserResponse {
