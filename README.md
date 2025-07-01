@@ -121,8 +121,7 @@ DB_HOST=localhost
 DB_PORT=5432
 DB_USER=postgres
 DB_PASSWORD=sua_senha
-DB_NAME=eventhub
-JWT_SECRET=sua_chave_secreta_jwt
+DB_NAME=event
 ```
 
 ### Banco de Dados
