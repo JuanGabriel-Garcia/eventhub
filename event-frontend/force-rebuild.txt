@@ -1,0 +1,4 @@
+# Força rebuild do projeto
+# Execute: npm run build && npm run dev
+
+echo "Limpando cache e forçando rebuild..."
